@@ -32,7 +32,7 @@ git@github.com:AikenCod/SafeCodable.git
 Or add it to `Package.swift`:
 
 ```swift
-.package(url: "git@github.com:AikenCod/SafeCodable.git", from: "0.1.4")
+.package(url: "git@github.com:AikenCod/SafeCodable.git", from: "0.1.5")
 ```
 
 Then add the product to your target:

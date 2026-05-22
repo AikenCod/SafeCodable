@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.5
+
+- Rebuild the package using Xcode's standard Swift package layout.
+- Restore package metadata, tests, documentation, license, and release hygiene.
+- Keep all SafeCodable runtime features from `0.1.4`, including URL decoding.
+
 ## 0.1.4
 
 - Add safe `URL` decoding from JSON strings.

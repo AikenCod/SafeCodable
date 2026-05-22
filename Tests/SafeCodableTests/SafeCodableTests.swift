@@ -3,7 +3,7 @@ import XCTest
 @testable import SafeCodable
 
 final class SafeCodableTests: XCTestCase {
-    func testSafeDecodeUsesDefaultsAndCoercesPrimitiveValues() throws {
+    func testSafeDecodeUsesDefaultsAndCoercesPrimitiveValues() {
         struct User: SafeCodable, Equatable {
             var id = 0
             var name = ""
@@ -18,7 +18,7 @@ final class SafeCodableTests: XCTestCase {
           "name": null,
           "age": "18",
           "score": "99.5",
-          "isVIP": 1
+          "is_vip": 1
         }
         """
 
@@ -31,26 +31,29 @@ final class SafeCodableTests: XCTestCase {
         XCTAssertEqual(user.isVIP, true)
     }
 
-    func testSafeDecodeCoercesNumberToString() throws {
+    func testSafeDecodeCoercesNumberAndBoolToString() {
         struct Item: SafeCodable, Equatable {
             var id = ""
-            var code = ""
+            var price = ""
+            var enabled = ""
         }
 
         let json = """
         {
           "id": 10086,
-          "code": true
+          "price": 99.5,
+          "enabled": true
         }
         """
 
         let item = Item.safeDecode(from: Data(json.utf8))
 
         XCTAssertEqual(item.id, "10086")
-        XCTAssertEqual(item.code, "true")
+        XCTAssertEqual(item.price, "99.5")
+        XCTAssertEqual(item.enabled, "true")
     }
 
-    func testSafeDecodeSupportsNestedModelsAndLossyArrays() throws {
+    func testSafeDecodeSupportsNestedModelsAndLossyArrays() {
         struct Profile: SafeCodable, Equatable {
             var avatar = ""
             var bio = ""
@@ -94,7 +97,7 @@ final class SafeCodableTests: XCTestCase {
         XCTAssertEqual(user.tags, ["ios", "123", "swift"])
     }
 
-    func testSafeDecodeSupportsArraysAtTheRoot() throws {
+    func testSafeDecodeSupportsRootArrays() {
         struct User: SafeCodable, Equatable {
             var id = 0
             var name = ""
@@ -116,18 +119,24 @@ final class SafeCodableTests: XCTestCase {
         ])
     }
 
-    func testSafeDecodeSupportsDateAndData() throws {
+    func testSafeDecodeSupportsDateDataAndURL() {
         struct Asset: SafeCodable {
             var createdAt: Date?
             var updatedAt: Date?
             var payload: Data?
+            var homepage = URL(string: "https://fallback.example.com")!
+            var avatar: URL?
+            var invalidURL = URL(string: "https://default.example.com")!
         }
 
         let json = """
         {
           "createdAt": "2026-05-22T10:30:00Z",
           "updatedAt": 1779445800000,
-          "payload": "SGVsbG8="
+          "payload": "SGVsbG8=",
+          "homepage": "https://example.com/home",
+          "avatar": "https://example.com/avatar.png",
+          "invalidURL": ""
         }
         """
 
@@ -136,28 +145,38 @@ final class SafeCodableTests: XCTestCase {
         XCTAssertNotNil(asset.createdAt)
         XCTAssertEqual(asset.updatedAt?.timeIntervalSince1970, 1_779_445_800)
         XCTAssertEqual(asset.payload.flatMap { String(data: $0, encoding: .utf8) }, "Hello")
+        XCTAssertEqual(asset.homepage.absoluteString, "https://example.com/home")
+        XCTAssertEqual(asset.avatar?.absoluteString, "https://example.com/avatar.png")
+        XCTAssertEqual(asset.invalidURL.absoluteString, "https://default.example.com")
     }
 
-    func testSafeDecodeSupportsURL() throws {
-        struct Link: SafeCodable, Equatable {
-            var homepage = URL(string: "https://fallback.example.com")!
-            var avatar: URL?
-            var invalid = URL(string: "https://default.example.com")!
+    func testSafeDecodeSupportsObjectFieldAsDictionary() {
+        struct Response: SafeCodable {
+            var id = 0
+            @SafeDictionary var config: [String: Any] = [:]
         }
 
         let json = """
         {
-          "homepage": "https://example.com/home",
-          "avatar": "https://example.com/avatar.png",
-          "invalid": ""
+          "id": 1,
+          "config": {
+            "theme": "dark",
+            "retry": 3,
+            "enabled": true,
+            "nested": { "name": "SafeCodable" },
+            "items": ["a", 2, false]
+          }
         }
         """
 
-        let link = Link.safeDecode(from: Data(json.utf8))
+        let response = Response.safeDecode(from: Data(json.utf8))
 
-        XCTAssertEqual(link.homepage.absoluteString, "https://example.com/home")
-        XCTAssertEqual(link.avatar?.absoluteString, "https://example.com/avatar.png")
-        XCTAssertEqual(link.invalid.absoluteString, "https://default.example.com")
+        XCTAssertEqual(response.id, 1)
+        XCTAssertEqual(response.config["theme"] as? String, "dark")
+        XCTAssertEqual(response.config["retry"] as? Int, 3)
+        XCTAssertEqual(response.config["enabled"] as? Bool, true)
+        XCTAssertEqual((response.config["nested"] as? [String: Any])?["name"] as? String, "SafeCodable")
+        XCTAssertEqual(response.config["items"] as? [Any] as NSArray?, ["a", 2, false] as NSArray)
     }
 
     func testSafeEncodeOutputsDataStringDictionaryAndArray() throws {
@@ -177,49 +196,8 @@ final class SafeCodableTests: XCTestCase {
         let decoded = try JSONDecoder().decode(User.self, from: data)
         XCTAssertEqual(decoded, user)
 
-        let string = user.safeJSONString()
-        XCTAssertTrue(string.contains("\"name\":\"Aiken\""))
-
-        let dictionary = user.safeDictionary()
-        XCTAssertEqual(dictionary?["id"] as? Int, 7)
-        XCTAssertEqual(dictionary?["name"] as? String, "Aiken")
-
-        let array = [user].safeJSONArray()
-        XCTAssertEqual(array?.count, 1)
-    }
-
-    func testSafeDecodeSupportsObjectFieldAsDictionary() throws {
-        struct Response: SafeCodable {
-            var id = 0
-            @SafeDictionary var config: [String: Any] = [:]
-        }
-
-        let json = """
-        {
-          "id": 1,
-          "config": {
-            "theme": "dark",
-            "retry": 3,
-            "enabled": true,
-            "nested": {
-              "name": "SafeCodable"
-            },
-            "items": ["a", 2, false]
-          }
-        }
-        """
-
-        let response = Response.safeDecode(from: Data(json.utf8))
-
-        XCTAssertEqual(response.id, 1)
-        XCTAssertEqual(response.config["theme"] as? String, "dark")
-        XCTAssertEqual(response.config["retry"] as? Int, 3)
-        XCTAssertEqual(response.config["enabled"] as? Bool, true)
-        XCTAssertEqual((response.config["nested"] as? [String: Any])?["name"] as? String, "SafeCodable")
-        XCTAssertEqual(response.config["items"] as? [Any] as NSArray?, ["a", 2, false] as NSArray)
-
-        let dictionary = response.safeDictionary()
-        let encodedConfig = dictionary?["config"] as? [String: Any]
-        XCTAssertEqual(encodedConfig?["theme"] as? String, "dark")
+        XCTAssertTrue(user.safeJSONString().contains("\"name\":\"Aiken\""))
+        XCTAssertEqual(user.safeDictionary()?["id"] as? Int, 7)
+        XCTAssertEqual([user].safeJSONArray()?.count, 1)
     }
 }

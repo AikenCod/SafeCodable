@@ -12,19 +12,22 @@ let package = Package(
         .watchOS(.v6)
     ],
     products: [
-        .library(name: "SafeCodable", targets: ["SafeCodable"])
+        .library(
+            name: "SafeCodable",
+            targets: ["SafeCodable"]
+        )
     ],
     dependencies: [],
     targets: [
         .target(
             name: "SafeCodable",
             dependencies: [],
-            path: "SafeCodable/Sources/SafeCodable"
+            path: "SafeCodable"
         ),
         .testTarget(
             name: "SafeCodableTests",
             dependencies: ["SafeCodable"],
-            path: "SafeCodable/Tests/SafeCodableTests"
+            path: "Tests/SafeCodableTests"
         )
     ]
 )
