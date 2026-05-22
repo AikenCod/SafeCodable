@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2
+
+- Expand Chinese and English usage documentation with JSON examples, model definitions, decode calls, and expected conversion results.
+- Add explicit documentation for primitive type coercion cases such as number to string, string to number, string to boolean, and invalid values falling back to defaults.
+
 ## 0.1.1
 
 - Add `@SafeDictionary` for decoding object fields into `[String: Any]`.
