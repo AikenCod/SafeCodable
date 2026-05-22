@@ -150,6 +150,65 @@ final class SafeCodableTests: XCTestCase {
         XCTAssertEqual(asset.invalidURL.absoluteString, "https://default.example.com")
     }
 
+    func testSafeDecodeSupportsDecimal() {
+        struct Price: SafeCodable, Equatable {
+            var amount = Decimal(0)
+            var discount: Decimal?
+            var fallback = Decimal(10)
+        }
+
+        let json = """
+        {
+          "amount": "19.99",
+          "discount": 2.5,
+          "fallback": "bad"
+        }
+        """
+
+        let price = Price.safeDecode(from: Data(json.utf8))
+
+        XCTAssertEqual(price.amount, Decimal(string: "19.99"))
+        XCTAssertEqual(price.discount, Decimal(string: "2.5"))
+        XCTAssertEqual(price.fallback, Decimal(10))
+    }
+
+    func testSafeDecodeSupportsRawRepresentableEnums() {
+        enum Status: String, Codable {
+            case unknown
+            case active
+            case disabled
+        }
+
+        enum Level: Int, Codable {
+            case low = 1
+            case medium = 2
+            case high = 3
+        }
+
+        struct Account: SafeCodable {
+            @SafeEnum var status: Status = .unknown
+            @SafeEnum var backupStatus: Status = .disabled
+            @SafeEnum var level: Level = .low
+            @SafeEnumOptional var optionalStatus: Status? = .unknown
+        }
+
+        let json = """
+        {
+          "status": "active",
+          "backupStatus": "missing",
+          "level": "3",
+          "optionalStatus": null
+        }
+        """
+
+        let account = Account.safeDecode(from: Data(json.utf8))
+
+        XCTAssertEqual(account.status, .active)
+        XCTAssertEqual(account.backupStatus, .disabled)
+        XCTAssertEqual(account.level, .high)
+        XCTAssertNil(account.optionalStatus)
+    }
+
     func testSafeDecodeSupportsObjectFieldAsDictionary() {
         struct Response: SafeCodable {
             var id = 0

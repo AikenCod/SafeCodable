@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.6
+
+- Add safe `Decimal` decoding from JSON numbers and numeric strings.
+- Add `@SafeEnum` and `@SafeEnumOptional` for raw-value enums backed by `String`, `Int`, `Double`, `Float`, or `Bool`.
+- Improve default-value lookup for property wrappers.
+
 ## 0.1.5
 
 - Rebuild the package using Xcode's standard Swift package layout.

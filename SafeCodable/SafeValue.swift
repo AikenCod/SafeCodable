@@ -83,6 +83,9 @@ enum SafeValue {
         if type == URL.self {
             return decodeURL(from: value, defaultValue: defaultValue) as? T
         }
+        if type == Decimal.self {
+            return decodeDecimal(from: value, defaultValue: defaultValue) as? T
+        }
         return nil
     }
 
@@ -186,6 +189,20 @@ enum SafeValue {
         return defaultValue as? URL ?? URL(fileURLWithPath: "")
     }
 
+    private static func decodeDecimal(from value: Any, defaultValue: Any?) -> Decimal {
+        if let decimal = value as? Decimal {
+            return decimal
+        }
+        if let number = value as? NSNumber {
+            return number.decimalValue
+        }
+        if let string = value as? String,
+           let decimal = Decimal(string: string.trimmingCharacters(in: .whitespacesAndNewlines)) {
+            return decimal
+        }
+        return defaultValue as? Decimal ?? Decimal(0)
+    }
+
     private static func fallbackValue<T>(_ type: T.Type) -> T {
         if type == String.self { return "" as! T }
         if type == Int.self { return 0 as! T }
@@ -195,6 +212,7 @@ enum SafeValue {
         if type == Date.self { return Date(timeIntervalSince1970: 0) as! T }
         if type == Data.self { return Data() as! T }
         if type == URL.self { return URL(fileURLWithPath: "") as! T }
+        if type == Decimal.self { return Decimal(0) as! T }
         return Optional<Any>.none as! T
     }
 }

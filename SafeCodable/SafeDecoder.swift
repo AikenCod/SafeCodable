@@ -61,6 +61,9 @@ struct SafeKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtoco
     func decode<T>(_ type: T.Type, forKey key: Key) throws -> T where T: Decodable {
         let fallback = defaultValue(for: key)
         guard let rawValue = value(for: key), !(rawValue is NSNull) else {
+            if let rawType = T.self as? AnySafeRawDecodable.Type {
+                return rawType.safeDecodeRaw(from: NSNull(), defaultValue: fallback) as! T
+            }
             if let fallback = fallback as? T {
                 return fallback
             }
@@ -128,7 +131,9 @@ struct SafeKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtoco
             return nil
         }
         return Mirror(reflecting: defaultValue).children.first { child in
-            child.label == key.stringValue || child.label?.safeSnakeCased() == key.stringValue
+            child.label == key.stringValue ||
+            child.label == "_\(key.stringValue)" ||
+            child.label?.safeSnakeCased() == key.stringValue
         }?.value
     }
 }
@@ -243,4 +248,3 @@ struct SafeSingleValueDecodingContainer: SingleValueDecodingContainer {
         SafeValue.decode(T.self, from: value, defaultValue: defaultValue)
     }
 }
-

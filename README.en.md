@@ -18,6 +18,8 @@ SafeCodable is a lightweight Swift package built on top of `Codable`.
 - Lossy arrays that skip invalid `null` elements
 - `Date` support for common strings and second/millisecond timestamps
 - `URL` support from JSON strings
+- `Decimal` support from JSON numbers and numeric strings
+- Raw-value enum support with `@SafeEnum`
 - `Data` support through Base64 strings
 - `snake_case` and `camelCase` compatibility
 
@@ -32,7 +34,7 @@ git@github.com:AikenCod/SafeCodable.git
 Or add it to `Package.swift`:
 
 ```swift
-.package(url: "git@github.com:AikenCod/SafeCodable.git", from: "0.1.5")
+.package(url: "git@github.com:AikenCod/SafeCodable.git", from: "0.1.6")
 ```
 
 Then add the product to your target:
@@ -377,6 +379,79 @@ Plain `[String: Any]` cannot synthesize `Codable` in Swift, so the wrapper is re
 
 ## URL, Date, and Data
 
+## Decimal and Enum
+
+### Decimal
+
+```swift
+struct Price: SafeCodable {
+    var amount = Decimal(0)
+    var discount: Decimal?
+    var fallback = Decimal(10)
+}
+```
+
+```json
+{
+  "amount": "19.99",
+  "discount": 2.5,
+  "fallback": "bad"
+}
+```
+
+Result:
+
+```swift
+price.amount == Decimal(string: "19.99")
+price.discount == Decimal(string: "2.5")
+price.fallback == Decimal(10)
+```
+
+### Enum
+
+Use `@SafeEnum` for raw-value enums:
+
+```swift
+enum Status: String, Codable {
+    case unknown
+    case active
+    case disabled
+}
+
+enum Level: Int, Codable {
+    case low = 1
+    case medium = 2
+    case high = 3
+}
+
+struct Account: SafeCodable {
+    @SafeEnum var status: Status = .unknown
+    @SafeEnum var backupStatus: Status = .disabled
+    @SafeEnum var level: Level = .low
+    @SafeEnumOptional var optionalStatus: Status? = .unknown
+}
+```
+
+```json
+{
+  "status": "active",
+  "backupStatus": "missing",
+  "level": "3",
+  "optionalStatus": null
+}
+```
+
+Result:
+
+```swift
+account.status == .active
+account.backupStatus == .disabled
+account.level == .high
+account.optionalStatus == nil
+```
+
+`@SafeEnum` supports `String`, `Int`, `Double`, `Float`, and `Bool` raw values. Invalid enum raw values use the property default.
+
 ### URL
 
 JSON:
@@ -531,6 +606,8 @@ Object as dictionary  -> @SafeDictionary
 Array null element    -> skipped
 Date number           -> second or millisecond timestamp
 URL string            -> URL
+Decimal string/number -> Decimal
+Enum raw value        -> @SafeEnum
 Data string           -> Base64
 ```
 
