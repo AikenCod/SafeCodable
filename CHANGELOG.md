@@ -4,6 +4,7 @@
 
 - Add `@SafeDictionary` for decoding object fields into `[String: Any]`.
 - Support encoding `@SafeDictionary` values back to JSON.
+- Document number and boolean to string coercion.
 
 ## 0.1.0
 

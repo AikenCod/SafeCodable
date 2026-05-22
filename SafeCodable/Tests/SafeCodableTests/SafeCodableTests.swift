@@ -31,6 +31,25 @@ final class SafeCodableTests: XCTestCase {
         XCTAssertEqual(user.isVIP, true)
     }
 
+    func testSafeDecodeCoercesNumberToString() throws {
+        struct Item: SafeCodable, Equatable {
+            var id = ""
+            var code = ""
+        }
+
+        let json = """
+        {
+          "id": 10086,
+          "code": true
+        }
+        """
+
+        let item = Item.safeDecode(from: Data(json.utf8))
+
+        XCTAssertEqual(item.id, "10086")
+        XCTAssertEqual(item.code, "true")
+    }
+
     func testSafeDecodeSupportsNestedModelsAndLossyArrays() throws {
         struct Profile: SafeCodable, Equatable {
             var avatar = ""

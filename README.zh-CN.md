@@ -75,6 +75,29 @@ user.age == 18
 user.isVIP == true
 ```
 
+数字和布尔值也可以直接用字符串接收：
+
+```swift
+struct Item: SafeCodable {
+    var id = ""
+    var enabled = ""
+}
+```
+
+```json
+{
+  "id": 10086,
+  "enabled": true
+}
+```
+
+结果：
+
+```swift
+item.id == "10086"
+item.enabled == "true"
+```
+
 ## 嵌套模型
 
 ```swift

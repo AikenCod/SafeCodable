@@ -75,6 +75,29 @@ user.age == 18
 user.isVIP == true
 ```
 
+Numbers and booleans can also be decoded as strings:
+
+```swift
+struct Item: SafeCodable {
+    var id = ""
+    var enabled = ""
+}
+```
+
+```json
+{
+  "id": 10086,
+  "enabled": true
+}
+```
+
+Result:
+
+```swift
+item.id == "10086"
+item.enabled == "true"
+```
+
 ## Nested Models
 
 ```swift
