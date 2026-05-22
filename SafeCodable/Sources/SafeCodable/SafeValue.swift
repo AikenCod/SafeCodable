@@ -187,7 +187,7 @@ public protocol AnySafeCodable {
     static func safeDecodeAny(from value: Any, defaultValue: Any?) -> Any
 }
 
-extension SafeCodable {
+public extension SafeCodable {
     static func safeDecodeAny(from value: Any, defaultValue: Any?) -> Any {
         _safeDecode(from: value, defaultValue: defaultValue as? Self ?? Self())
     }

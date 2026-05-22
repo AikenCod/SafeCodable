@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.3
+
+- Fix external module conformance for app models that declare `struct Model: SafeCodable`.
+- Make the `AnySafeCodable.safeDecodeAny(from:defaultValue:)` default implementation publicly available through `SafeCodable`.
+
 ## 0.1.2
 
 - Expand Chinese and English usage documentation with JSON examples, model definitions, decode calls, and expected conversion results.

@@ -31,7 +31,7 @@ git@github.com:AikenCod/SafeCodable.git
 或在 `Package.swift` 中添加：
 
 ```swift
-.package(url: "git@github.com:AikenCod/SafeCodable.git", from: "0.1.2")
+.package(url: "git@github.com:AikenCod/SafeCodable.git", from: "0.1.3")
 ```
 
 然后在 target 中依赖：
