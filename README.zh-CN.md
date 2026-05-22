@@ -42,6 +42,8 @@ git@github.com:AikenCod/SafeCodable.git
 
 ## 基础用法
 
+最简单的使用方式：
+
 ```swift
 import SafeCodable
 
@@ -75,30 +77,152 @@ user.age == 18
 user.isVIP == true
 ```
 
-数字和布尔值也可以直接用字符串接收：
+## 类型自动转换
 
-```swift
-struct Item: SafeCodable {
-    var id = ""
-    var enabled = ""
-}
-```
+### JSON 数字或布尔值，用 String 接收
+
+JSON：
 
 ```json
 {
   "id": 10086,
+  "price": 99.5,
   "enabled": true
 }
+```
+
+模型：
+
+```swift
+struct Item: SafeCodable {
+    var id = ""
+    var price = ""
+    var enabled = ""
+}
+```
+
+解析：
+
+```swift
+let item = Item.safeDecode(from: data)
 ```
 
 结果：
 
 ```swift
 item.id == "10086"
+item.price == "99.5"
 item.enabled == "true"
 ```
 
+### JSON 字符串，用 Int / Double / Bool 接收
+
+JSON：
+
+```json
+{
+  "age": "18",
+  "height": "178.5",
+  "enabled": "yes",
+  "vip": "1"
+}
+```
+
+模型：
+
+```swift
+struct User: SafeCodable {
+    var age = 0
+    var height = 0.0
+    var enabled = false
+    var vip = false
+}
+```
+
+解析：
+
+```swift
+let user = User.safeDecode(from: data)
+```
+
+结果：
+
+```swift
+user.age == 18
+user.height == 178.5
+user.enabled == true
+user.vip == true
+```
+
+### JSON 数字，用 Bool 接收
+
+JSON：
+
+```json
+{
+  "isEnabled": 1,
+  "isDeleted": 0
+}
+```
+
+模型：
+
+```swift
+struct State: SafeCodable {
+    var isEnabled = false
+    var isDeleted = true
+}
+```
+
+结果：
+
+```swift
+state.isEnabled == true
+state.isDeleted == false
+```
+
+### 无法转换时使用默认值
+
+JSON：
+
+```json
+{
+  "age": "abc",
+  "name": null
+}
+```
+
+模型：
+
+```swift
+struct User: SafeCodable {
+    var age = 10
+    var name = "unknown"
+}
+```
+
+结果：
+
+```swift
+user.age == 10
+user.name == "unknown"
+```
+
 ## 嵌套模型
+
+JSON：
+
+```json
+{
+  "name": "Aiken",
+  "profile": {
+    "avatar": "avatar.png",
+    "bio": "iOS Developer"
+  }
+}
+```
+
+模型：
 
 ```swift
 struct Profile: SafeCodable {
@@ -114,9 +238,36 @@ struct User: SafeCodable {
 let user = User.safeDecode(from: data)
 ```
 
-如果 `profile` 缺失、为 `null` 或结构异常，会使用 `Profile()`。
+结果：
+
+```swift
+user.name == "Aiken"
+user.profile.avatar == "avatar.png"
+```
+
+如果 `profile` 缺失、为 `null` 或结构异常，会使用模型里的默认值：
+
+```swift
+user.profile == Profile()
+```
 
 ## 数组
+
+JSON：
+
+```json
+{
+  "posts": [
+    { "id": "1", "title": "Hello" },
+    null,
+    { "id": "bad", "title": "Broken" },
+    { "id": 2, "title": "World" }
+  ],
+  "tags": ["ios", null, 123, "swift"]
+}
+```
+
+模型：
 
 ```swift
 struct Post: SafeCodable {
@@ -130,31 +281,53 @@ struct User: SafeCodable {
 }
 ```
 
+解析：
+
+```swift
+let user = User.safeDecode(from: data)
+```
+
+结果：
+
+```swift
+user.posts.map(\.id) == [1, 0, 2]
+user.posts.map(\.title) == ["Hello", "Broken", "World"]
+user.tags == ["ios", "123", "swift"]
+```
+
 数组里的 `null` 会被跳过，元素内部字段错误会使用元素模型默认值。
 
 根节点数组也支持：
 
+JSON：
+
+```json
+[
+  { "id": "1", "title": "Hello" },
+  null,
+  { "id": 2, "title": "World" }
+]
+```
+
+解析：
+
 ```swift
-let users = [User].safeDecode(from: data)
+let posts = [Post].safeDecode(from: data)
+```
+
+结果：
+
+```swift
+posts.count == 2
+posts[0].id == 1
+posts[1].id == 2
 ```
 
 ## 对象字段接收为字典
 
 如果 JSON 里某个 key 对应的是对象，但你不想再建一个模型，可以用 `@SafeDictionary`：
 
-```swift
-struct Response: SafeCodable {
-    var id = 0
-    @SafeDictionary var config: [String: Any] = [:]
-}
-
-let response = Response.safeDecode(from: data)
-let theme = response.config["theme"] as? String
-let retry = response.config["retry"] as? Int
-let nested = response.config["nested"] as? [String: Any]
-```
-
-示例 JSON：
+JSON：
 
 ```json
 {
@@ -162,22 +335,80 @@ let nested = response.config["nested"] as? [String: Any]
   "config": {
     "theme": "dark",
     "retry": 3,
+    "enabled": true,
     "nested": {
       "name": "SafeCodable"
-    }
+    },
+    "items": ["a", 2, false]
   }
 }
+```
+
+模型：
+
+```swift
+struct Response: SafeCodable {
+    var id = 0
+    @SafeDictionary var config: [String: Any] = [:]
+}
+```
+
+解析：
+
+```swift
+let response = Response.safeDecode(from: data)
+let theme = response.config["theme"] as? String
+let retry = response.config["retry"] as? Int
+let nested = response.config["nested"] as? [String: Any]
+let items = response.config["items"] as? [Any]
+```
+
+结果：
+
+```swift
+theme == "dark"
+retry == 3
+nested?["name"] as? String == "SafeCodable"
+items?.count == 3
 ```
 
 Swift 原生裸写 `[String: Any]` 不能自动合成 `Codable`，所以这里需要 wrapper。业务读取到的 `config` 仍然是普通字典。
 
 ## Date 和 Data
 
+JSON：
+
+```json
+{
+  "createdAt": "2026-05-22T10:30:00Z",
+  "updatedAt": 1779445800000,
+  "payload": "SGVsbG8="
+}
+```
+
+模型：
+
 ```swift
 struct Asset: SafeCodable {
     var createdAt: Date?
+    var updatedAt: Date?
     var payload: Data?
 }
+```
+
+解析：
+
+```swift
+let asset = Asset.safeDecode(from: data)
+let text = asset.payload.flatMap { String(data: $0, encoding: .utf8) }
+```
+
+结果：
+
+```swift
+asset.createdAt != nil
+asset.updatedAt?.timeIntervalSince1970 == 1779445800
+text == "Hello"
 ```
 
 `Date` 默认支持：
@@ -200,6 +431,24 @@ struct Asset: SafeCodable {
 
 ## 转 JSON
 
+模型：
+
+```swift
+struct Profile: SafeCodable {
+    var avatar = ""
+}
+
+struct User: SafeCodable {
+    var id = 0
+    var name = ""
+    var profile = Profile()
+}
+
+let user = User(id: 7, name: "Aiken", profile: Profile(avatar: "a.png"))
+```
+
+转成 `Data` / `String` / 字典：
+
 ```swift
 let data = user.safeJSONData()
 let string = user.safeJSONString()
@@ -207,9 +456,22 @@ let pretty = user.safeJSONString(prettyPrinted: true)
 let dictionary = user.safeDictionary()
 ```
 
+示例输出：
+
+```json
+{
+  "id": 7,
+  "name": "Aiken",
+  "profile": {
+    "avatar": "a.png"
+  }
+}
+```
+
 数组：
 
 ```swift
+let users = [user]
 let data = users.safeJSONData()
 let string = users.safeJSONString()
 let array = users.safeJSONArray()
