@@ -80,6 +80,9 @@ enum SafeValue {
         if type == Data.self {
             return decodeData(from: value, defaultValue: defaultValue) as? T
         }
+        if type == URL.self {
+            return decodeURL(from: value, defaultValue: defaultValue) as? T
+        }
         return nil
     }
 
@@ -171,6 +174,18 @@ enum SafeValue {
         return defaultValue as? Data ?? Data()
     }
 
+    private static func decodeURL(from value: Any, defaultValue: Any?) -> URL {
+        if let url = value as? URL {
+            return url
+        }
+        if let string = value as? String,
+           !string.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+           let url = URL(string: string) {
+            return url
+        }
+        return defaultValue as? URL ?? URL(fileURLWithPath: "")
+    }
+
     private static func fallbackValue<T>(_ type: T.Type) -> T {
         if type == String.self { return "" as! T }
         if type == Int.self { return 0 as! T }
@@ -179,6 +194,7 @@ enum SafeValue {
         if type == Bool.self { return false as! T }
         if type == Date.self { return Date(timeIntervalSince1970: 0) as! T }
         if type == Data.self { return Data() as! T }
+        if type == URL.self { return URL(fileURLWithPath: "") as! T }
         return Optional<Any>.none as! T
     }
 }

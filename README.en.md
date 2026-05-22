@@ -17,6 +17,7 @@ SafeCodable is a lightweight Swift package built on top of `Codable`.
 - Object fields can be captured as `[String: Any]` with `@SafeDictionary`
 - Lossy arrays that skip invalid `null` elements
 - `Date` support for common strings and second/millisecond timestamps
+- `URL` support from JSON strings
 - `Data` support through Base64 strings
 - `snake_case` and `camelCase` compatibility
 
@@ -31,7 +32,7 @@ git@github.com:AikenCod/SafeCodable.git
 Or add it to `Package.swift`:
 
 ```swift
-.package(url: "git@github.com:AikenCod/SafeCodable.git", from: "0.1.3")
+.package(url: "git@github.com:AikenCod/SafeCodable.git", from: "0.1.4")
 ```
 
 Then add the product to your target:
@@ -374,7 +375,47 @@ items?.count == 3
 
 Plain `[String: Any]` cannot synthesize `Codable` in Swift, so the wrapper is required. The value you read in business code is still a normal dictionary.
 
-## Date and Data
+## URL, Date, and Data
+
+### URL
+
+JSON:
+
+```json
+{
+  "homepage": "https://example.com",
+  "avatar": "https://example.com/avatar.png",
+  "fallback": ""
+}
+```
+
+Model:
+
+```swift
+struct Link: SafeCodable {
+    var homepage = URL(string: "https://default.example.com")!
+    var avatar: URL?
+    var fallback = URL(string: "https://fallback.example.com")!
+}
+```
+
+Decode:
+
+```swift
+let link = Link.safeDecode(from: data)
+```
+
+Result:
+
+```swift
+link.homepage.absoluteString == "https://example.com"
+link.avatar?.absoluteString == "https://example.com/avatar.png"
+link.fallback.absoluteString == "https://fallback.example.com"
+```
+
+Empty or invalid URL strings use the property default for non-optional `URL`. Optional `URL?` values become `nil` when the JSON value is `null` or missing.
+
+### Date and Data
 
 JSON:
 
@@ -489,6 +530,7 @@ Nested model failure  -> nested default value
 Object as dictionary  -> @SafeDictionary
 Array null element    -> skipped
 Date number           -> second or millisecond timestamp
+URL string            -> URL
 Data string           -> Base64
 ```
 

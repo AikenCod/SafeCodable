@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.4
+
+- Add safe `URL` decoding from JSON strings.
+- Invalid or empty URL strings fall back to default values for non-optional `URL` properties.
+
 ## 0.1.3
 
 - Fix external module conformance for app models that declare `struct Model: SafeCodable`.

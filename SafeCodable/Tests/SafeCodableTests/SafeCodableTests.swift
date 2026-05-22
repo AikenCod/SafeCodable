@@ -138,6 +138,28 @@ final class SafeCodableTests: XCTestCase {
         XCTAssertEqual(asset.payload.flatMap { String(data: $0, encoding: .utf8) }, "Hello")
     }
 
+    func testSafeDecodeSupportsURL() throws {
+        struct Link: SafeCodable, Equatable {
+            var homepage = URL(string: "https://fallback.example.com")!
+            var avatar: URL?
+            var invalid = URL(string: "https://default.example.com")!
+        }
+
+        let json = """
+        {
+          "homepage": "https://example.com/home",
+          "avatar": "https://example.com/avatar.png",
+          "invalid": ""
+        }
+        """
+
+        let link = Link.safeDecode(from: Data(json.utf8))
+
+        XCTAssertEqual(link.homepage.absoluteString, "https://example.com/home")
+        XCTAssertEqual(link.avatar?.absoluteString, "https://example.com/avatar.png")
+        XCTAssertEqual(link.invalid.absoluteString, "https://default.example.com")
+    }
+
     func testSafeEncodeOutputsDataStringDictionaryAndArray() throws {
         struct Profile: SafeCodable, Equatable {
             var avatar = ""

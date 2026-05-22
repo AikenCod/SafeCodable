@@ -17,6 +17,7 @@ SafeCodable 是一个基于 Swift `Codable` 的轻量 JSON 解析库，目标是
 - 对象字段可以用 `@SafeDictionary` 接成 `[String: Any]`
 - 数组自动跳过 `null` 等无效元素
 - 支持 `Date` 常见格式和秒/毫秒时间戳
+- 支持 JSON 字符串解析成 `URL`
 - 支持 `Data` Base64 解析和编码
 - 兼容 `snake_case` 和 `camelCase`
 
@@ -31,7 +32,7 @@ git@github.com:AikenCod/SafeCodable.git
 或在 `Package.swift` 中添加：
 
 ```swift
-.package(url: "git@github.com:AikenCod/SafeCodable.git", from: "0.1.3")
+.package(url: "git@github.com:AikenCod/SafeCodable.git", from: "0.1.4")
 ```
 
 然后在 target 中依赖：
@@ -374,7 +375,47 @@ items?.count == 3
 
 Swift 原生裸写 `[String: Any]` 不能自动合成 `Codable`，所以这里需要 wrapper。业务读取到的 `config` 仍然是普通字典。
 
-## Date 和 Data
+## URL、Date 和 Data
+
+### URL
+
+JSON：
+
+```json
+{
+  "homepage": "https://example.com",
+  "avatar": "https://example.com/avatar.png",
+  "fallback": ""
+}
+```
+
+模型：
+
+```swift
+struct Link: SafeCodable {
+    var homepage = URL(string: "https://default.example.com")!
+    var avatar: URL?
+    var fallback = URL(string: "https://fallback.example.com")!
+}
+```
+
+解析：
+
+```swift
+let link = Link.safeDecode(from: data)
+```
+
+结果：
+
+```swift
+link.homepage.absoluteString == "https://example.com"
+link.avatar?.absoluteString == "https://example.com/avatar.png"
+link.fallback.absoluteString == "https://fallback.example.com"
+```
+
+空字符串或非法 URL 字符串会让非 Optional `URL` 使用属性默认值。`URL?` 在 JSON 为 `null` 或字段缺失时会变成 `nil`。
+
+### Date 和 Data
 
 JSON：
 
@@ -489,6 +530,7 @@ let array = users.safeJSONArray()
 对象接收为字典    -> 使用 @SafeDictionary
 数组元素为 null   -> 跳过
 Date 数字         -> 按秒或毫秒时间戳解析
+URL 字符串        -> URL
 Data 字符串       -> 按 Base64 解析
 ```
 
