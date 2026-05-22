@@ -14,6 +14,7 @@ SafeCodable is a lightweight Swift package built on top of `Codable`.
 - `null` falls back to defaults or `nil`
 - Common coercion for `String`, `Int`, `Double`, `Float`, and `Bool`
 - Safe nested model decoding
+- Object fields can be captured as `[String: Any]` with `@SafeDictionary`
 - Lossy arrays that skip invalid `null` elements
 - `Date` support for common strings and second/millisecond timestamps
 - `Data` support through Base64 strings
@@ -30,7 +31,7 @@ git@github.com:AikenCod/SafeCodable.git
 Or add it to `Package.swift`:
 
 ```swift
-.package(url: "git@github.com:AikenCod/SafeCodable.git", from: "0.1.0")
+.package(url: "git@github.com:AikenCod/SafeCodable.git", from: "0.1.1")
 ```
 
 Then add the product to your target:
@@ -114,6 +115,39 @@ Root arrays are supported too:
 let users = [User].safeDecode(from: data)
 ```
 
+## Object Field as Dictionary
+
+Sometimes one JSON key is an object, but you do not want to create another model for it. Use `@SafeDictionary`:
+
+```swift
+struct Response: SafeCodable {
+    var id = 0
+    @SafeDictionary var config: [String: Any] = [:]
+}
+
+let response = Response.safeDecode(from: data)
+let theme = response.config["theme"] as? String
+let retry = response.config["retry"] as? Int
+let nested = response.config["nested"] as? [String: Any]
+```
+
+Example JSON:
+
+```json
+{
+  "id": 1,
+  "config": {
+    "theme": "dark",
+    "retry": 3,
+    "nested": {
+      "name": "SafeCodable"
+    }
+  }
+}
+```
+
+Plain `[String: Any]` cannot synthesize `Codable` in Swift, so the wrapper is required. The value you read in business code is still a normal dictionary.
+
 ## Date and Data
 
 ```swift
@@ -167,6 +201,7 @@ null field            -> default value for non-optional, nil for optional
 Numeric string        -> number
 Number/string/bool    -> common coercion
 Nested model failure  -> nested default value
+Object as dictionary  -> @SafeDictionary
 Array null element    -> skipped
 Date number           -> second or millisecond timestamp
 Data string           -> Base64
@@ -183,4 +218,3 @@ Data string           -> Base64
 ## License
 
 MIT
-

@@ -14,6 +14,7 @@ SafeCodable 是一个基于 Swift `Codable` 的轻量 JSON 解析库，目标是
 - `null` 自动使用默认值或 `nil`
 - `String` / `Int` / `Double` / `Float` / `Bool` 常见类型自动转换
 - 嵌套模型自动安全解析
+- 对象字段可以用 `@SafeDictionary` 接成 `[String: Any]`
 - 数组自动跳过 `null` 等无效元素
 - 支持 `Date` 常见格式和秒/毫秒时间戳
 - 支持 `Data` Base64 解析和编码
@@ -30,7 +31,7 @@ git@github.com:AikenCod/SafeCodable.git
 或在 `Package.swift` 中添加：
 
 ```swift
-.package(url: "git@github.com:AikenCod/SafeCodable.git", from: "0.1.0")
+.package(url: "git@github.com:AikenCod/SafeCodable.git", from: "0.1.1")
 ```
 
 然后在 target 中依赖：
@@ -114,6 +115,39 @@ struct User: SafeCodable {
 let users = [User].safeDecode(from: data)
 ```
 
+## 对象字段接收为字典
+
+如果 JSON 里某个 key 对应的是对象，但你不想再建一个模型，可以用 `@SafeDictionary`：
+
+```swift
+struct Response: SafeCodable {
+    var id = 0
+    @SafeDictionary var config: [String: Any] = [:]
+}
+
+let response = Response.safeDecode(from: data)
+let theme = response.config["theme"] as? String
+let retry = response.config["retry"] as? Int
+let nested = response.config["nested"] as? [String: Any]
+```
+
+示例 JSON：
+
+```json
+{
+  "id": 1,
+  "config": {
+    "theme": "dark",
+    "retry": 3,
+    "nested": {
+      "name": "SafeCodable"
+    }
+  }
+}
+```
+
+Swift 原生裸写 `[String: Any]` 不能自动合成 `Codable`，所以这里需要 wrapper。业务读取到的 `config` 仍然是普通字典。
+
 ## Date 和 Data
 
 ```swift
@@ -167,6 +201,7 @@ let array = users.safeJSONArray()
 数字字符串        -> 自动转数字
 数字/字符串/布尔值 -> 常见场景自动互转
 嵌套模型失败      -> 使用嵌套模型默认值
+对象接收为字典    -> 使用 @SafeDictionary
 数组元素为 null   -> 跳过
 Date 数字         -> 按秒或毫秒时间戳解析
 Data 字符串       -> 按 Base64 解析
@@ -183,4 +218,3 @@ Data 字符串       -> 按 Base64 解析
 ## License
 
 MIT
-

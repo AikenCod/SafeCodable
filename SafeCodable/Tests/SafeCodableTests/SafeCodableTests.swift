@@ -146,4 +146,39 @@ final class SafeCodableTests: XCTestCase {
         let array = [user].safeJSONArray()
         XCTAssertEqual(array?.count, 1)
     }
+
+    func testSafeDecodeSupportsObjectFieldAsDictionary() throws {
+        struct Response: SafeCodable {
+            var id = 0
+            @SafeDictionary var config: [String: Any] = [:]
+        }
+
+        let json = """
+        {
+          "id": 1,
+          "config": {
+            "theme": "dark",
+            "retry": 3,
+            "enabled": true,
+            "nested": {
+              "name": "SafeCodable"
+            },
+            "items": ["a", 2, false]
+          }
+        }
+        """
+
+        let response = Response.safeDecode(from: Data(json.utf8))
+
+        XCTAssertEqual(response.id, 1)
+        XCTAssertEqual(response.config["theme"] as? String, "dark")
+        XCTAssertEqual(response.config["retry"] as? Int, 3)
+        XCTAssertEqual(response.config["enabled"] as? Bool, true)
+        XCTAssertEqual((response.config["nested"] as? [String: Any])?["name"] as? String, "SafeCodable")
+        XCTAssertEqual(response.config["items"] as? [Any] as NSArray?, ["a", 2, false] as NSArray)
+
+        let dictionary = response.safeDictionary()
+        let encodedConfig = dictionary?["config"] as? [String: Any]
+        XCTAssertEqual(encodedConfig?["theme"] as? String, "dark")
+    }
 }

@@ -14,6 +14,10 @@ enum SafeValue {
             return decoded
         }
 
+        if let rawType = T.self as? AnySafeRawDecodable.Type {
+            return rawType.safeDecodeRaw(from: value, defaultValue: defaultValue) as! T
+        }
+
         if let arrayType = T.self as? AnySafeArray.Type {
             return arrayType.safeDecodeArray(from: value) as! T
         }
@@ -201,6 +205,10 @@ extension Array: AnySafeArray where Element: Decodable {
 
 protocol AnySafeDictionary {
     static func safeDecodeDictionary(from value: Any) -> Any
+}
+
+protocol AnySafeRawDecodable {
+    static func safeDecodeRaw(from value: Any, defaultValue: Any?) -> Any
 }
 
 extension Dictionary: AnySafeDictionary where Key == String, Value: Decodable {

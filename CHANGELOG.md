@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1
+
+- Add `@SafeDictionary` for decoding object fields into `[String: Any]`.
+- Support encoding `@SafeDictionary` values back to JSON.
+
 ## 0.1.0
 
 - Add one-line safe decoding for `SafeCodable` models.
